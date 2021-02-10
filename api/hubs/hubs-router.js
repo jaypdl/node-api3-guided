@@ -7,15 +7,18 @@ const router = express.Router();
 
 const checkHubId = async (req,res,next)=>{
   const {id} = req.params
-  const hub = await Hubs.findById(id)
-  if(!hub){
-    res.status(400).json({message: `No hub with id: ${id}`})
-  }else{
-    req.hub = hub
-    next()
-  }
+  try{
+    const hub = await Hubs.findById(id)
+    if(!hub){
+      res.status(400).json({message: `No hub with id: ${id}`})
+    }else{
+      req.hub = hub
+      next()
+    }
+  }catch(e){
+    res.status(500).json(`Server error: ${e}`)
+  }  
 }
-
 
 router.get('/', (req, res) => {
   Hubs.find(req.query)
@@ -52,11 +55,7 @@ router.post('/', (req, res) => {
 router.delete('/:id', checkHubId, (req, res) => {
   Hubs.remove(req.params.id)
     .then(count => {
-      if (count > 0) {
-        res.status(200).json({ message: 'The hub has been nuked' });
-      } else {
-        res.status(404).json({ message: 'The hub could not be found' });
-      }
+      res.status(200).json({message: "The hub has been nuked"})
     })
     .catch(error => {
       // log error to server
@@ -70,11 +69,7 @@ router.delete('/:id', checkHubId, (req, res) => {
 router.put('/:id', checkHubId, (req, res) => {
   Hubs.update(req.params.id, req.body)
     .then(hub => {
-      if (hub) {
-        res.status(200).json(hub);
-      } else {
-        res.status(404).json({ message: 'The hub could not be found' });
-      }
+      res.status(200).json(hub)
     })
     .catch(error => {
       // log error to server
