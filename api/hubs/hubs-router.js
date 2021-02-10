@@ -2,23 +2,10 @@ const express = require('express');
 
 const Hubs = require('./hubs-model.js');
 const Messages = require('../messages/messages-model.js');
+const mw = require("../middleware/middlewares.js")
 
 const router = express.Router();
 
-const checkHubId = async (req,res,next)=>{
-  const {id} = req.params
-  try{
-    const hub = await Hubs.findById(id)
-    if(!hub){
-      res.status(400).json({message: `No hub with id: ${id}`})
-    }else{
-      req.hub = hub
-      next()
-    }
-  }catch(e){
-    res.status(500).json(`Server error: ${e}`)
-  }  
-}
 
 router.get('/', (req, res) => {
   Hubs.find(req.query)
@@ -34,7 +21,7 @@ router.get('/', (req, res) => {
     });
 });
 
-router.get('/:id',checkHubId, (req, res) => {
+router.get('/:id',mw.checkHubId, (req, res) => {
   res.status(200).json(req.hub)
 });
 
@@ -52,7 +39,7 @@ router.post('/', (req, res) => {
     });
 });
 
-router.delete('/:id', checkHubId, (req, res) => {
+router.delete('/:id', mw.checkHubId, (req, res) => {
   Hubs.remove(req.params.id)
     .then(count => {
       res.status(200).json({message: "The hub has been nuked"})
@@ -66,7 +53,7 @@ router.delete('/:id', checkHubId, (req, res) => {
     });
 });
 
-router.put('/:id', checkHubId, (req, res) => {
+router.put('/:id', mw.checkHubId, (req, res) => {
   Hubs.update(req.params.id, req.body)
     .then(hub => {
       res.status(200).json(hub)
@@ -80,7 +67,7 @@ router.put('/:id', checkHubId, (req, res) => {
     });
 });
 
-router.get('/:id/messages',checkHubId, (req, res) => {
+router.get('/:id/messages',mw.checkHubId, (req, res) => {
   Hubs.findHubMessages(req.params.id)
     .then(messages => {
       res.status(200).json(messages);
@@ -94,7 +81,7 @@ router.get('/:id/messages',checkHubId, (req, res) => {
     });
 });
 
-router.post('/:id/messages',checkHubId, (req, res) => {
+router.post('/:id/messages', (req, res,next) => {
   const messageInfo = { ...req.body, hub_id: req.params.id };
 
   Messages.add(messageInfo)
@@ -102,12 +89,15 @@ router.post('/:id/messages',checkHubId, (req, res) => {
       res.status(210).json(message);
     })
     .catch(error => {
-      // log error to server
-      console.log(error);
-      res.status(500).json({
-        message: 'Error adding message to the hub',
-      });
+      next(error)
     });
 });
+
+router.use((err,req,res,next)=>{
+  res.status(500).json({
+    message: "Something blew up",
+    error:err.message
+  })
+})
 
 module.exports = router;
