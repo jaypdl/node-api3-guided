@@ -3,43 +3,23 @@ const morgan = require("morgan")
 const helmet = require("helmet")
 
 const hubsRouter = require('./hubs/hubs-router.js');
+const mw = require("./middleware/middlewares.js")
 
 const server = express();
-
-
-const logQuote = (coin) => (req,res,next) =>{
-  if(coin === "dime" || coin ==="penny" || coin === "nickel" || coin ==="quarter"){
-    console.log(`A ${coin} saved is a ${coin} not enjoyed (:`)
-    next()
-  }else{
-    res.json("not a valid coin")
-  }
-}
-
-const checkWord = (req,res,next) =>{
-  if(req.query && req.query.word && req.query.word == "turd"){
-    res.json(`You can't proceed ${req.query.word} is a bad word`)
-  }else{
-    next()
-  }
-}
-
-
 
 // function logQuote(req,res,next){
 //   console.log("A penny saved is a penny not enjoyed (:")
 //   next()
 // }
 
-
 server.use(helmet())
 server.use(express.json(), morgan("dev"));
-//server.use(logQuote("whatever"))
+server.use(mw.logQuote("penny"))
 //server.use(morgan("dev"))
 
 server.use('/api/hubs', hubsRouter);
 
-server.get('/', checkWord,  (req, res) => {
+server.get('/', mw.checkWord, (req, res) => {
   const nameInsert = (req.name) ? ` ${req.name}` : '';
 
   res.send(`
