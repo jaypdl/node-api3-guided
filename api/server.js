@@ -17,7 +17,11 @@ const logQuote = (coin) => (req,res,next) =>{
 }
 
 const checkWord = (req,res,next) =>{
-  
+  if(req.query && req.query.word && req.query.word == "turd"){
+    res.json(`You can't proceed ${req.query.word} is a bad word`)
+  }else{
+    next()
+  }
 }
 
 
@@ -30,12 +34,12 @@ const checkWord = (req,res,next) =>{
 
 server.use(helmet())
 server.use(express.json(), morgan("dev"));
-server.use(logQuote("whatever"))
+//server.use(logQuote("whatever"))
 //server.use(morgan("dev"))
 
 server.use('/api/hubs', hubsRouter);
 
-server.get('/', (req, res) => {
+server.get('/', checkWord,  (req, res) => {
   const nameInsert = (req.name) ? ` ${req.name}` : '';
 
   res.send(`
